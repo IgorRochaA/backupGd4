@@ -43,7 +43,8 @@ flowchart TD
     E --> F[Busca de E-mails com Backups]
     F --> G[Download Automático dos Arquivos]
     G --> H[Organização nas Pastas Correspondentes]
-    H --> I[Geração de Relatório de Erros (CSV)]
+    H --> I["Geração de Relatório de Erros CSV"]
+
 ```
 
 ---
