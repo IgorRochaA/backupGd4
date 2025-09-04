@@ -26,8 +26,6 @@ Automação ponta-a-ponta para <strong>solicitar</strong> e <strong>baixar backu
   <a href="#️-execução">Execução</a> •
   <a href="#-exemplo-de-estrutura-de-pastas">Estrutura</a> •
   <a href="#-roadmap">Roadmap</a> •
-  <a href="#-perguntas-frequentes-faq">FAQ</a> •
-  <a href="#-licença">Licença</a>
 </p>
 
 ---
@@ -291,7 +289,3 @@ Fechando o navegador.
 </details>
 
 ---
-
-## 📝 Licença
-
-Distribuído sob a licença MIT. Veja <a href="LICENSE">LICENSE</a> para mais informações.
