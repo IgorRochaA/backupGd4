@@ -15,81 +15,109 @@ import os
 erros_encontrados = [] # lista para armazenar os erros encontrados
 
 def arquivo_salvo(diretorios_de_backup, driver): # função para salvar os arquivos nas pastas correspondentes
-    
+    print("\n \n \n \n -------------------------------------\nIniciando o processo de salvamento dos arquivos...") # informa que o processo de salvamento começou
     todos_os_arquivos_salvos = diretorios_de_backup # lista com todos os caminhos das pastas
     
-    try: # tenta executar o código
+    if not todos_os_arquivos_salvos: # verifica se a lista está vazia
+        print("Nenhuma pasta encontrada para processar.")
+        return
+    
+    time.sleep(3) # espera 3 segundos para garantir que a página carregou
 
-        for diretorio_destino in todos_os_arquivos_salvos: # percorre a lista de caminhos das pastas
+    for diretorio_destino in todos_os_arquivos_salvos: # percorre a lista de caminhos das pastas
+
+        try:
 
             nome_da_pasta_inicial = os.path.basename(diretorio_destino) # pega o nome da pasta
 
             nome_da_pasta = nome_da_pasta_inicial.replace('_', ' ') # substitui os underscores por espaços
 
-            time.sleep(5) # espera 5 segundos para garantir que a página carregou
+            time.sleep(3) # espera 3 segundos para garantir que a página carregou
 
             barra_de_busca = WebDriverWait(driver, 20).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, f"#topSearchInput"))
             ) # localiza a barra de busca
             
+            barra_de_busca.send_keys(Keys.CONTROL + "a") # seleciona todo o texto na barra de busca
+            barra_de_busca.send_keys(Keys.BACKSPACE) # apaga o texto na barra de busca
+            
             barra_de_busca.send_keys(nome_da_pasta) # digita o nome da pasta na barra de busca
             barra_de_busca.send_keys(Keys.RETURN) # aperta enter para buscar
+            print(f"Buscando pelo arquivo: {nome_da_pasta} ...") # mostra o nome do arquivo que está sendo procurado
             
             email_encontrado = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "div[role='option']"))
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[role='option']"))
             )
-            email_encontrado.click() # clica no email encontrado
+            print("Email encontrado na busca.")
+            download_realizado = False # flag para indicar se o download foi realizado
+            for email_na_lista in email_encontrado:
+                try: 
+                    email_na_lista.click() # clica no email encontrado
+                    time.sleep(1) # espera 1 segundo para garantir que o email carregou
 
-            seletor_conferencia_de_nome = "div[id^='UniqueMessageBody_'] > div > div > div > div > table > tbody > tr:nth-child(2) > td:nth-child(1)" # seletor para conferir o nome do arquivo no email
+                    seletor_conferencia_de_nome = "div[id^='UniqueMessageBody_'] > div > div > div > div > table > tbody > tr:nth-child(2) > td:nth-child(1)" # seletor para conferir o nome do arquivo no email
 
-            nome_do_arquivo = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, seletor_conferencia_de_nome))
-            ).text # pega o nome do arquivo no email
+                    nome_do_arquivo = WebDriverWait(driver, 20).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, seletor_conferencia_de_nome))
+                    ).text.strip() # pega o nome do arquivo no email
 
-            if nome_do_arquivo == nome_da_pasta: # compara o nome do arquivo com o nome da pasta
+                    if nome_do_arquivo == nome_da_pasta: # compara o nome do arquivo com o nome da pasta
 
-                print(f"Arquivo '{nome_do_arquivo}' encontrado no email. Iniciando download...\n") # informa que o arquivo foi encontrado
+                        print(f"Arquivo '{nome_do_arquivo}' encontrado no email. Iniciando download...\n") # informa que o arquivo foi encontrado
 
-                seletor_botao_de_download = "div[id^='UniqueMessageBody_'] > div > div > div > div > table > tbody > tr:nth-child(2) > td:nth-child(2) > ul > li > a" # seletor para o botão de download
-                botao_de_download = WebDriverWait(driver, 20).until(
-                    EC.element_to_be_clickable((By.CSS_SELECTOR, seletor_botao_de_download))
-                ) # localiza o botão de download
-                url_extraida = botao_de_download.get_attribute("href") # extrai a URL do botão de download
-                print(f"Download do arquivo {nome_do_arquivo} iniciado.")
-                tempo_espera = 0 # variavel para contar o tempo de espera do download
+                        seletor_botao_de_download = "div[id^='UniqueMessageBody_'] > div > div > div > div > table > tbody > tr:nth-child(2) > td:nth-child(2) > ul > li > a" # seletor para o botão de download
+                        botao_de_download = WebDriverWait(driver, 20).until(
+                            EC.element_to_be_clickable((By.CSS_SELECTOR, seletor_botao_de_download))
+                        ) # localiza o botão de download
+                        url_extraida = botao_de_download.get_attribute("href") # extrai a URL do botão de download
+                        print(f"Download do arquivo {nome_do_arquivo} iniciado.")
+                        tempo_espera = 0 # variavel para contar o tempo de espera do download
 
-                prefs = {
-                    "download.default_directory": diretorio_destino, # Diretório de download padrão
-                    "download.prompt_for_download": False, # Desativar prompt para download
-                    "directory_upgrade": True, # Permitir que o diretório de download seja atualizado
-                    "safebrowsing.enabled": True # Ativar proteção contra downloads perigosos
-                }  # Configurações de preferências do Chrome
-                new_chrome_options = Options()  # Configurações do Chrome
-                new_chrome_options.add_argument("--start-maximized") # Inicia o navegador maximizado
-                new_chrome_options.add_experimental_option("prefs", prefs) # Adiciona as preferências ao Chrome
-                new_chrome_options.add_argument("--incognito")  # Navegação anônima
+                        prefs = {
+                            "download.default_directory": os.path.abspath(diretorio_destino), # Diretório de download padrão
+                            "download.prompt_for_download": False, # Desativar prompt para download
+                            "directory_upgrade": True, # Permitir que o diretório de download seja atualizado
+                            "safebrowsing.enabled": True, # Ativar proteção contra downloads perigosos
+                            "plugins.always_open_pdf_externally": True, # Baixar PDFs diretamente
+                            "download.directory_upgrade": True  # Atualizar o diretório de download, se necessário
+                        }  # Configurações de preferências do Chrome
+                        new_chrome_options = Options()  # Configurações do Chrome
+                        new_chrome_options.add_argument("--headless")  # Executa o navegador em modo headless (sem interface gráfica)
+                        new_chrome_options.add_argument("--start-maximized") # Inicia o navegador maximizado
+                        new_chrome_options.add_experimental_option("prefs", prefs) # Adiciona as preferências ao Chrome
+                        #new_chrome_options.add_argument("--incognito")  # Navegação anônima
 
-                new_driver = webdriver.Chrome(options=new_chrome_options)  # Inicializa um novo navegador
-                new_driver.get(url_extraida) # Acessa a URL de download
-            
-                while tempo_espera < 15: # espera até 15 segundos para o download ser concluído
-                    if os.path.exists(nome_do_arquivo): # verifica se o arquivo foi baixado
-                        print(f"SUCESSO: O arquivo '{nome_do_arquivo}' foi salvo na pasta correta!") # informa que o arquivo foi salvo
-                        break # sai do loop
-                    else: # se o arquivo não foi baixado, espera 1 segundo e verifica novamente
-                        print(f"Aguardando o download do arquivo '{nome_do_arquivo}'... ({tempo_espera + 1}/15 segundos)") # informa que o download está em andamento
-                        time.sleep(1) # espera 1 segundo
-                    tempo_espera += 1 # incrementa o tempo de espera
-                
-                new_driver.quit() # fecha o navegador de download
-                barra_de_busca.send_keys(Keys.CONTROL + "a") # seleciona todo o texto na barra de busca
-                barra_de_busca.send_keys(Keys.BACKSPACE) # apaga o texto na barra
-                print(f"barra de busca limpa, pronto para o próximo arquivo.\n") 
-            else:
-                print(f"ERRO: O arquivo '{nome_da_pasta}' não foi encontrado no email.") 
-    finally:
-        print("Finalizando o processo de download.")
-        driver.quit()
+                        new_driver = webdriver.Chrome(options=new_chrome_options)  # Inicializa um novo navegador
+                        new_driver.get(url_extraida) # Acessa a URL de download
+
+                        while tempo_espera < 30: # espera até 30 segundos para o download ser concluído
+                            if os.path.exists(nome_do_arquivo): # verifica se o arquivo foi baixado
+                                print(f"SUCESSO: O arquivo '{nome_do_arquivo}' foi salvo na pasta correta!") # informa que o arquivo foi salvo
+                                break # sai do loop
+                            else: # se o arquivo não foi baixado, espera 1 segundo e verifica novamente
+                                print(f"Aguardando o download do arquivo '{nome_do_arquivo}'... ({tempo_espera + 1}/30 segundos)") # informa que o download está em andamento
+                                time.sleep(1) # espera 1 segundo
+                            tempo_espera += 1 # incrementa o tempo de espera
+                        new_driver.quit() # fecha o navegador de download
+                        download_realizado = True # marca que o download foi realizado
+                        break # sai do loop de emails, pois o arquivo foi encontrado e o download iniciado
+                    else:
+                        print(f"ERRO: O arquivo '{nome_da_pasta}' não foi encontrado no email.")
+                except Exception as e:
+                    print(f"ERRO ao tentar clicar no email ou processar o download: {e}")
+                    continue # tenta o próximo email na lista
+            if not download_realizado: # se o download não foi realizado, informa que o arquivo não foi encontrado
+                print(f"ERRO: O arquivo '{nome_da_pasta}' não foi encontrado no email.")
+
+        except TimeoutException:
+            print(f"ERRO: O arquivo '{nome_da_pasta}' não foi encontrado no email.")
+            continue # pula para o próximo diretório
+        except Exception as e:
+            print(f"ERRO ao processar o arquivo '{nome_da_pasta}': {e}")
+            continue # pula para o próximo diretório
+
+    print("processo finalizado \n \n \n \n -------------------------------------") # informa que o processo de salvamento foi finalizado
+    driver.quit() # fecha o navegador principal
 
 def salvar_relatorio_de_erros(lista_de_erros): # função para salvar o relatório de erros em um arquivo CSV
     """
@@ -137,19 +165,15 @@ def lista_emp_status_colaborador(obra , status , nome): # função para criar a 
 
 def percorrer_pastas(lista_de_pastas):
     lista_de_pastas = os.path.abspath(lista_de_pastas) # converte o caminho relativo em absoluto
-    print(f"Caminho absoluto da pasta: {lista_de_pastas}")
     if not os.path.isdir(lista_de_pastas): # verifica se o caminho é uma pasta
         print(f"A pasta {lista_de_pastas} não existe.")
         return [] # retorna uma lista vazia se a pasta não existir
     
     pastas_folhas = [] # lista para armazenar os caminhos das pastas sem subpastas
-    print(f"Listando pastas em: {lista_de_pastas}")
 
     for dirpath, dirnames, filenames in os.walk(lista_de_pastas): # percorre a pasta e suas subpastas
         if not dirnames:  # Verifica se é uma pasta sem subpastas
             pastas_folhas.append(dirpath) # adiciona o caminho da pasta à lista
-
-    print(f"Pastas encontradas: {len(pastas_folhas)}") # mostra o número de pastas encontradas
 
     return pastas_folhas # retorna a lista de pastas
 
@@ -328,6 +352,7 @@ def clicar_email_nao_lido_outlook(email, senha): # função para clicar no email
     chrome_options.add_argument("--incognito")  # Navegação anônima
     driver = webdriver.Chrome(options=chrome_options) # Inicializa o driver do Chrome
     driver.get(f"https://outlook.live.com/") # Acessa o Outlook
+    print("navegador aberto")
 
     try:
 
@@ -363,7 +388,7 @@ def clicar_email_nao_lido_outlook(email, senha): # função para clicar no email
         ).click() # clica no botão 'Entrar'
         time.sleep(3) # espera 3 segundos para carregar a página
 
-        lista_de_pastas = (r"pasta_de_backup") # caminho da pasta onde estão as pastas de backup <-- alterar aqui
+        lista_de_pastas = (r"caminho\para\as\pastas") # caminho da pasta onde estão as pastas de backup <-- alterar aqui
 
         time.sleep(3) # espera 3 segundos para garantir que a página carregou
 
@@ -376,11 +401,13 @@ def clicar_email_nao_lido_outlook(email, senha): # função para clicar no email
 
 def main (): # função principal
     # Defina suas credenciais
-    email = "seu_email@exemplo.com"
-    senha = "sua_senha"
+    email = "seu_email_aqui" # <-- alterar aqui
+    senha = "sua_senha_aqui" # <-- alterar aqui
 
     # Chamar as funções
-    solicitar_backup(email, senha, "Ativo" , "2") # chama a função para solicitar o backup, parametros status e obra
+    solicitar_backup(email, senha, "ativo" , "2") # chama a função para solicitar o backup, parametros status e obra
+    solicitar_backup(email, senha, "inativo" , "2") # chama a função para solicitar o backup, parametros status e obra
+    
     clicar_email_nao_lido_outlook(email, senha) # chama a função para clicar no email não lido do outlook
 
 if __name__ == "__main__":
